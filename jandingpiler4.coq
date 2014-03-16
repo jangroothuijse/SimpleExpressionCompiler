@@ -1,30 +1,9 @@
-Inductive even : nat -> Prop :=
-| even0 : even 0
-| evenSS : forall n:nat, even n -> even (S (S n)).
-
-Print le.
-
 Require Import Arith.
 Require Import Ascii.
 Require Import String.
 
-Print string.
-
-Eval compute in length "Hello world!!!".
-
-Print ascii.
-
-Print leb.
-
-Fixpoint ones (s: string) : nat :=
-match s with
-| EmptyString => 0
-| String h t => if (beq_nat 49 (nat_of_ascii h)) then 1 + ones t else ones t
-end.
-
-Eval compute in ones "0000110000ol".
-
-Print nat.
+(* Give an Inductive definition of a datatype Exp of (the abstract syntax
+for) ⟨exp⟩s. *)
 
 Inductive BinOp := | add : BinOp | sub : BinOp | mul : BinOp.
 
@@ -32,6 +11,11 @@ Inductive Exp : Set :=
 | lit : nat -> Exp
 | exp : BinOp -> Exp -> Exp -> Exp.
 
+(* 
+  Define a function
+  eval: Exp -> nat
+  giving a semantics for ⟨exp⟩s.
+ *)
 Fixpoint eval (e: Exp) : nat :=
 match e with
 | lit n => n
@@ -140,17 +124,24 @@ Eval compute in lex_and_parse "(((13)) + (14 + 5) * (15 + 6))".
 Eval compute in lex_and_parse "(((13)) + (14 + 5) * (15 + 6)))".
 Eval compute in lex_and_parse "((((13)) + (14 + 5) * (15 + 6))".
 
+(* Give an Inductive definition of a datatype RPN of Reverse Polish Notation
+for ⟨exp⟩s. *)
+
 Inductive RPNSymbol := 
 | rpnlit : nat -> RPNSymbol
 | rpnop : BinOp -> RPNSymbol.
 
 Definition RPN := list RPNSymbol.
 
-Search list.
+(* Write a compiler
+   rpn : Exp -> RPN *)
+
 Fixpoint rpn (e: Exp) : RPN := match e with
 | lit n => cons (rpnlit n) nil
 | exp op e1 e2 => app (rpn e1) (app (rpn e2) (cons (rpnop op) nil))
 end.
+
+(* Write an evaluator rpn_eval for RPN, returning an option nat. *)
 
 Fixpoint rpn_eval_ (s: list nat) (code: RPN) : option nat := match code with
 | nil => match s with | nil => None | cons r _ => Some r end
@@ -174,13 +165,8 @@ Print rpn_eval_.
 
 Definition rpn_eval (code: RPN) := rpn_eval_ nil code.
 
-
-
-
 Eval compute in option_map (rpn_eval) (option_map (rpn) (lex_and_parse "1+5*6")).
 Eval compute in option_map (rpn_eval) (option_map (rpn) (lex_and_parse "15*5+5")).
-(* Theorem interpret_equals_compile_h1 : forall e f g : Exp, forall o : binop,  *)  
-Search list.
 
 (* I doont know why i did not have these, please comment them out if you have them *)
 
@@ -192,10 +178,6 @@ simpl.
 rewrite IHx.
 reflexivity.
 Qed.
-
-Search list.
-
-Print app_nil.
 
 Theorem app_assoc: forall (a:Type) (x y z : list a) , x ++ (y ++ z) = (x ++ y) ++ z.
 intro a.
@@ -304,6 +286,9 @@ rewrite app_assoc with (z:= t).
 reflexivity.
 Qed.
 
+(* Prove that forall e:Exp, Some (eval e) = rpn_eval (rpn e)
+   This solution relies on the 'step' theorem proved earlier *)
+
 Theorem interpret_equals_compile : forall e:Exp, Some (eval e) = rpn_eval (rpn e).
 unfold rpn_eval.
 induction e.
@@ -327,54 +312,66 @@ simpl.
 reflexivity.
 Qed.
 
-Inductive Exp2 
 
-Definition compile (s : string) : option string := option_map (toRPN) (lex_and_parse s).
+
+
+(* Generalize the above to Expressions containing variables, and evaluation
+with respect to an environment of bindings of variables to nats. *)
+
+Inductive Exp2 := 
+| lit2 : nat -> Exp2 
+| var : nat -> Exp2
+| exp2 : BinOp -> Exp2 -> Exp2 -> Exp2 .
+
+Fixpoint lookup (n: nat) (l: list nat) : option nat :=
+match l with
+| nil => None
+| h :: tl => match n with
+  | 0 => Some h
+  | S n0 => lookup n0 tl
+  end
+end.
+
+Fixpoint eval2 (e: Exp2) (env: list nat) : option nat := match e with
+| lit2 n => Some n
+| var n => lookup n env
+| exp2 op e1 e2 => match eval2 e1 env with
+  | None => None
+  | Some v1 => match eval2 e2 env with
+    | None => None
+    | Some v2 => match op with
+      | add => Some (v1 + v2)
+      | sub => Some (v1 - v2)
+      | mul => Some (v1 * v2)
+      end
+    end
+  end
+end.
+
+(* Discuss how you might avoid explicit consideration of None terms in the
+definition of rpn_eval, and explain how you need to modify your formal-
+ization in Coq. *)
+
+(* In order to avoid explicit None's everywhere, one would have to verify that al looked
+ up variables actually exists; or default to 0 *)
+(* The formalization would have to be changed to include the 'var' case whenever we
+ do induction on Exp (now Exp2). The workings of var would be almost identical to a 
+ normal literal. *)
+
+
+Definition compile (s : string) : option RPN := option_map (rpn) (lex_and_parse s).
 
 Eval compute in compile "4 + 5".
 Eval compute in compile "7 + 8 + 6".
 Eval compute in compile "(5 + 7) + (6 * 3)".
 Eval compute in compile "(((1)) + (1 + 5) * (1 + 6))".
 
-Fixpoint run_ (s: list nat) (t : list Tok) : option nat := 
-match t with
-| nil => match s with | nil => None | cons r _ => Some r end
-| cons h tl => match h with 
-  | num n => run_ (cons n s) tl
-  | binop op => match s with | nil => None | cons n1 t2 => match t2 with
-    | nil => None | cons n2 t3 => match op with
-       | add => (run_ (cons (n1 + n2) t3) tl) 
-       | sub => (run_ (cons (n1 - n2) t3) tl)
-       | mul => (run_ (cons (n1 * n2) t3) tl)
-    end end
-  end
-  | _ => None
-  end
-end.
-
-Definition run (t : list Tok) : option nat := run_ nil t.
 
 Definition compile_and_run (s : string) : option nat := option_flatten (nat) 
-  (option_map (run) (option_flatten (list Tok) (option_map (lex) (compile s)))).
+  (option_map (rpn_eval) (compile s)).
+
+Eval compute in compile_and_run "4 + 5".
 
 Definition interpret (s: string) : option nat := option_map (eval) (lex_and_parse s).
- (* now interpret = compile_and_run... *)
-
-Theorem compile_equals_run : forall s : string, compile_and_run s = interpret s.
-Proof.
-intro t.
-unfold compile_and_run.
-unfold interpret.
-unfold compile.
-induction (lex_and_parse t).
-induction a.
-simpl.
-induction n.
-simpl.
-unfold run.
-simpl.
-reflexivity.
-unfold string_of_nat.
-unfold string_of_nat_.
-by cases.
+Eval compute in interpret "4 + 5".
 
