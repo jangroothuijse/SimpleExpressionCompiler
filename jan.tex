@@ -1,0 +1,58 @@
+\documentclass[10pt,a4paper,usenames,dvipnames]{article}
+\author{ Jan Groothuijse }
+\title{ Proving an expression compiler correct }
+\begin{document}
+
+\maketitle
+\begin{abstract}
+This document is the report accompanying a coq file in which a simple expression compiler is proven correct. 
+It shall discuss the challenges and solutions of the implementation, focussing on the process of creating it.
+For further (non process related) documentation please see the accompanying coq file. Since this subject was number
+3 on a list of possible subjects, and to ease 'searching' in the coq file, all assignments are prefixed by '3.'. 
+Those assignments also form the structure of this document.
+\end{abstract}
+
+\section*{3.1 Inductive definition of Exp}
+To keep the definitions small and aid the provability of the theorems, i decided to have a seperate BinOp definition, so that
+the actual Exp definition only needed 2 clauses. Since i have not tried it the other way, i do not know if this was the right
+decision. When proving the correctness of the compiler i did need to do induction on BinOp in order to keep the goals readable, and i did end up with what i think is not the shortest way to prove the theorem.
+
+For the definition of the following functions, these 'small' datatypes did work well.
+
+\section*{3.2 Eval }
+Defining eval based on the previously declared datatypes was pretty straightforward.
+
+\section*{ Front-end }
+I decided for testing purposes and for dusting off my ocalm/coq 'experience' to implement a front-end for this compiler.
+Since i already build a compiler once using a functional language, the design was mostly in my head already.
+
+I did at some point make a version that used mutual recursion, but in order to show coq that the arguments where indeed descreasing i had to duplicate some logic in all of the functions. So it turned out to be really big and i decided to use
+this approach instead. This version however does not respect operator precedence.
+
+Its a simple lexer-parser design, with the note that the lexer's result is reversed, a parser could be designed to handle this, but in this case it makes no dirrence.
+
+Along the way i also created a option\_flatten, which turns an option (option a) into option a; i did find a option\_map, but i could not find a function that does this, so i created it.
+
+\section*{3.3 Inductive definition of RPN }
+
+In the reverse polish notation, because there are no parentheses, there are only numbers and operators. While this could be defined using a list (either nat Binop), i decided to play it safe and define a RPNSymbol to be either a literal (number) or an operator (BinOp). I did however use lists, RPN is defined as list RPNSymbol.
+
+The reasen for not using Either is readability of the proof, i was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
+
+\section*{3.4 Compiler }
+%conclusions?
+
+
+
+\begin{thebibliography}{9}
+
+\bibitem{CH2Ointro}
+	Freek Wiedijk, 
+	\emph{Formalizing the C99 standard in HOL, Isabelle and Coq}, 
+	Institute for Computing and Information Sciences, Radboud University Nijmegen, 
+	date.
+
+\end{thebibliography}
+
+
+\end{document}

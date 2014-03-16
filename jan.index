@@ -1,0 +1,33 @@
+3.1 Give an Inductive definition of a datatype Exp of (the abstract syntax
+for) ⟨exp⟩s.
+line 7
+
+3.2 Define a function
+eval: Exp -> nat
+giving a semantics for ⟨exp⟩s.
+line 19
+
+3.3 Give an Inductive definition of a datatype RPN of Reverse Polish Notation
+for ⟨exp⟩s.
+line 125
+
+3.4 Write a compiler
+rpn : Exp -> RPN
+line 137
+
+3.5 Write an evaluator rpn_eval for RPN, returning an option nat.
+line 148
+
+3.6 Prove that
+forall e:Exp, Some (eval e) = rpn_eval (rpn e)
+line 293
+
+3.7 Generalize the above to Expressions containing variables, and evaluation
+with respect to an environment of bindings of variables to nats.
+line 323
+
+3.8 Discuss how you might avoid explicit consideration of None terms in the
+definition of rpn_eval, and explain how you need to modify your formal-
+ization in Coq.
+line 358
+
