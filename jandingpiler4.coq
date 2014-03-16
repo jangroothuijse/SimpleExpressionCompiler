@@ -197,17 +197,14 @@ Search list.
 
 Print app_nil.
 
-Theorem app_assoc: forall (a:Type) (x y z : list a) , (x ++ y) ++ z = (x ++ y) ++ z.
-intros a x y z.
+Theorem app_assoc: forall (a:Type) (x y z : list a) , x ++ (y ++ z) = (x ++ y) ++ z.
+intro a.
 induction x.
 simpl.
 reflexivity.
-induction y.
 simpl.
-reflexivity.
-induction z.
-simpl.
-reflexivity.
+intros y z.
+rewrite IHx with (y := y) (z := z).
 reflexivity.
 Qed.
 
@@ -243,83 +240,94 @@ rewrite step1.
 rewrite step2.
 rewrite step3.
 reflexivity.
-assert (assoc_1 := rpn e1 ++ rpn e2 ++ (rpnop add :: nil) ++ t
- = rpn e1 ++ (rpn e2 __ (rpnop add :: nil)) ++ t).
+rewrite app_assoc.
+rewrite app_assoc with (x:= rpn e1).
+rewrite app_assoc with (z:= t).
+reflexivity.
 
+(* Same for - *)
+intros s t.
+assert (s1 := (rpn e1 ++ rpn e2 ++ rpnop sub :: nil) ++ t 
+       = rpn e1 ++ (rpn e2 ++ ((rpnop sub :: nil) ++ t))).
+replace ((rpn e1 ++ rpn e2 ++ rpnop sub :: nil) ++ t) 
+   with (rpn e1 ++ (rpn e2 ++ ((rpnop sub :: nil) ++ t))).
 
-apply IHe1 with (t := rpn e2 ++ (rpnop add :: nil) ++ t).
+assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop sub :: nil) ++ t) = 
+   rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop sub :: nil) ++ t)).
+apply IHe1 with (t := rpn e2 ++ (rpnop sub :: nil) ++ t).
 
+assert (step2: rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop sub :: nil) ++ t)
+= rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)).
+apply IHe2 with (t := (rpnop sub :: nil) ++ t).
 
+assert (step3: 
+    rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)
+    = rpn_eval_ (eval e1 - eval e2 :: s) t).
+simpl.
+reflexivity.
+rewrite step1.
+rewrite step2.
+rewrite step3.
+reflexivity.
+rewrite app_assoc.
+rewrite app_assoc with (x:= rpn e1).
+rewrite app_assoc with (z:= t).
+reflexivity.
 
-(* apply IHe1 with (t := (rpn e2 ++ rpnop add :: nil)). *)
-(* make rpn e1 ++ rpn e2 ++ rpnop add :: nil) ++ t *)
-(* bind differently, so that its because easier to seperate *)
-(* Or make use of commutivatity of append... *)
-intro t0.
-apply IHe1 with (t := (rpn.
+(* and again for multiplication *)
+intros s t.
+assert (s1 := (rpn e1 ++ rpn e2 ++ rpnop mul :: nil) ++ t 
+       = rpn e1 ++ (rpn e2 ++ ((rpnop mul :: nil) ++ t))).
+replace ((rpn e1 ++ rpn e2 ++ rpnop mul :: nil) ++ t) 
+   with (rpn e1 ++ (rpn e2 ++ ((rpnop mul :: nil) ++ t))).
 
+assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop mul :: nil) ++ t) = 
+   rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop mul :: nil) ++ t)).
+apply IHe1 with (t := rpn e2 ++ (rpnop mul :: nil) ++ t).
+
+assert (step2: rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop mul :: nil) ++ t)
+= rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)).
+apply IHe2 with (t := (rpnop mul :: nil) ++ t).
+
+assert (step3: 
+    rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)
+    = rpn_eval_ (eval e1 * eval e2 :: s) t).
+simpl.
+reflexivity.
+rewrite step1.
+rewrite step2.
+rewrite step3.
+reflexivity.
+rewrite app_assoc.
+rewrite app_assoc with (x:= rpn e1).
+rewrite app_assoc with (z:= t).
+reflexivity.
+Qed.
 
 Theorem interpret_equals_compile : forall e:Exp, Some (eval e) = rpn_eval (rpn e).
-intro e.
 unfold rpn_eval.
 induction e.
 simpl.
 reflexivity.
 induction b.
 simpl.
-(* rpn e1 has to be eaten by the algorithm, lets make an theorem that it is *)
-
-
-
-intro e.
-unfold rpn_eval.
-induction e.
+rewrite step.
+rewrite step.
 simpl.
 reflexivity.
-induction e1.
-induction e2.
 simpl.
-induction b.
-reflexivity.
-reflexivity.
-reflexivity.
-simpl.
-induction b.
-induction b0.
-(* Now we if we can change rpn e2_1 into a nat value on the stack *)
-unfold app.
-unfold rpn_eval_.
-simpl.
-
-
-unfold app.
-simpl.
-
-
-apply IHe2_2.
-unfold rpn.
-
-
-intro e.
-unfold rpn_eval.
-induction e.
+rewrite step.
+rewrite step.
 simpl.
 reflexivity.
-induction b.
 simpl.
-unfold app.
-unfold rpn_eval_.
+rewrite step.
+rewrite step.
 simpl.
+reflexivity.
+Qed.
 
-simpl.
-
-
-Fixpoint toRPN (e: Exp) : string := match e with
-| lit n => string_of_nat n
-| exp op e1 e2 => append (toRPN e1) 
-   (append (String (ascii_of_nat 32) 
-      (toRPN e2)) (String (ascii_of_nat 32) (String (ots op) EmptyString)))
-end.
+Inductive Exp2 
 
 Definition compile (s : string) : option string := option_map (toRPN) (lex_and_parse s).
 
@@ -370,11 +378,3 @@ unfold string_of_nat.
 unfold string_of_nat_.
 by cases.
 
-
-
-
-Fixpoint is17 (n: nat) : bool := 
-match (n + 1) with
-| 17 => true
-| _ => let f := 3 in false
-end.
