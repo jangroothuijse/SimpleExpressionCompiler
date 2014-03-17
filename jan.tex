@@ -40,8 +40,12 @@ In the reverse polish notation, because there are no parentheses, there are only
 The reasen for not using Either is readability of the proof, i was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
 
 \section*{3.4 Compiler }
-%conclusions?
+The compiler is pretty straightforward, using lists as output did help here. Its the shape of the recursion that does the transformation.
 
+\section*{3.5 Evaluator for RPN}
+When evaluating rpn, one needs a 'stack' like datastructure. Fortunaly for us, the list is such a datastructure, so our stacks of numbers is a list nat. The rpn_eval_ function consumes code, uses an accumulater as stack. In order to create a nicer interface, i also created rpn_eval which only takes RPN as argument and then call rpn_eval_ with an empty stack. This should be the function that is 'exported'.
+
+This wrapper function poses no real challanges for proving, but it should be unfolded before doing induction so that the induction hyptothesis is somewhat nic
 
 
 \begin{thebibliography}{9}
