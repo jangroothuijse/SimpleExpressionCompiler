@@ -328,6 +328,7 @@ Qed.
 Inductive Exp2 := 
 | lit2 : nat -> Exp2 
 | var : nat -> Exp2
+| letvar : nat -> Exp2 -> Exp2 -> Exp2
 | exp2 : BinOp -> Exp2 -> Exp2 -> Exp2 .
 
 Fixpoint lookup (n: nat) (l: list nat) : option nat :=
@@ -339,9 +340,28 @@ match l with
   end
 end.
 
+Fixpoint setvar (n m: nat) (l: list nat) : option (list nat) := 
+match l with
+| nil => match n with | 0 => Some (m :: nil) | _ => None end
+| h :: tl => match n with
+  | 0 => Some (m :: tl)
+  | S n0 => match setvar n0 m l with 
+    | None => None
+    | Some tl0 => Some (h :: tl0)
+    end
+  end
+end.
+
 Fixpoint eval2 (e: Exp2) (env: list nat) : option nat := match e with
 | lit2 n => Some n
 | var n => lookup n env
+| letvar n e1 e2 => match eval2 e1 env with
+  | None => None
+  | Some v => match (setvar n v env) with
+    | None => None
+    | Some env2 => eval2 e2 env2
+    end
+  end
 | exp2 op e1 e2 => match eval2 e1 env with
   | None => None
   | Some v1 => match eval2 e2 env with
@@ -355,6 +375,83 @@ Fixpoint eval2 (e: Exp2) (env: list nat) : option nat := match e with
   end
 end.
 
+Inductive RPNSymbol2 := 
+| rpnlit2 : nat -> RPNSymbol2
+| rpnvar : nat -> RPNSymbol2
+| popframe : RPNSymbol2
+| pushframe : RPNSymbol2
+| rpnop2 : BinOp -> RPNSymbol2.
+
+Definition RPN2 := list RPNSymbol2.
+
+Fixpoint rpn2 (e: Exp2) : RPN2 := match e with
+| lit2 n => (rpnlit2 n) :: nil
+| var n => (rpnvar n) :: nil
+| letvar n e1 e2 => 
+    (rpn2 e1) ++ ((rpnlit2 n) :: pushframe :: rpn2 e2) ++ (popframe :: nil)
+| exp2 op e1 e2 => app (rpn2 e1) (app (rpn2 e2) (rpnop2 op :: nil))
+end.
+
+(* Adds to rpn_eval_ the concept of stackframes for the environment *)
+Fixpoint rpn2_eval_ (s : list nat) (f : list (list nat)) (code: RPN2) : option nat := 
+match f with | nil => None | f1 :: fx =>
+match code with
+| nil => match s with | nil => None | r :: _ => Some r end
+| h :: tl => match h with
+  | rpnlit2 n => rpn2_eval_ (n :: s) f tl
+  | rpnvar n => match lookup n f1 with
+    | None => None
+    | Some v => rpn2_eval_ (v :: s) f tl
+    end
+  | popframe => rpn2_eval_ s fx tl
+  | pushframe => match s with
+    | nil => None
+    | n1 :: s1 => match s1 with 
+      | nil => None
+      | n2 :: s2 => match (setvar n1 n2 f1) with
+        | None => None
+        | Some f0 => rpn2_eval_ s2 (f0 :: f) tl
+        end
+      end
+    end
+  | rpnop2 op => match s with
+    | nil => None 
+    | n1 :: s1 => match s1 with
+      | nil => None
+      | n2 :: s2 => match op with
+        | add => rpn2_eval_ (n2 + n1 :: s2) f tl
+        | sub => rpn2_eval_ (n2 - n1 :: s2) f tl
+        | mul => rpn2_eval_ (n2 * n1 :: s2) f tl
+        end
+      end
+    end
+  end
+end end.
+
+Definition rpn2_eval (code : RPN2) (env : list nat) : option nat :=
+rpn2_eval_ nil (env :: nil) code.
+
+Definition testExp : Exp2 := 
+letvar 0 
+(* = *)
+(exp2 add (lit2 3) (lit2 6))
+(* in *) 
+(exp2 add
+  (exp2 mul (var 0) 
+  (letvar 0
+    (* = *)
+    (lit2 2)
+    (* in *)
+    (var 0)
+  ))
+  (var 0)
+).
+
+Eval compute in eval2 testExp (0 :: nil).
+Eval compute in rpn2_eval_ nil ((0 :: nil) :: nil) (rpn2 testExp).
+Eval compute in rpn2_eval (rpn2 testExp) (0 :: nil).
+
+
 (* 3.8
  * Discuss how you might avoid explicit consideration of None terms in the
  * definition of rpn_eval, and explain how you need to modify your formal-
@@ -365,8 +462,11 @@ end.
  up variables actually exists; or default to 0 *)
 (* The formalization would have to be changed to include the 'var' case whenever we
  do induction on Exp (now Exp2). The workings of var would be almost identical to a 
- normal literal. *)
+ normal literal. The letvar however is more of a challenge*)
 
+
+
+(* Some usefull functions for the simple expression compiler *)
 
 Definition compile (s : string) : option RPN := option_map (rpn) (lex_and_parse s).
 
