@@ -45,7 +45,9 @@ The compiler is pretty straightforward, using lists as output did help here. Its
 \section*{3.5 Evaluator for RPN}
 When evaluating rpn, one needs a 'stack' like datastructure. Fortunaly for us, the list is such a datastructure, so our stacks of numbers is a list nat. The rpn_eval_ function consumes code, uses an accumulater as stack. In order to create a nicer interface, i also created rpn_eval which only takes RPN as argument and then call rpn_eval_ with an empty stack. This should be the function that is 'exported'.
 
-This wrapper function poses no real challanges for proving, but it should be unfolded before doing induction so that the induction hyptothesis is somewhat nic
+This wrapper function poses no real challanges for proving, but it should be unfolded before doing induction so that the induction hyptothesis is somewhat more usefull.
+
+rpn_eval_ looks slightly clumbsy, because in case of rpnop we need to pop 2 values from the stack. The order of n1 and n2 is reversed to operate more like the semantisch defining eval function.
 
 
 \begin{thebibliography}{9}
