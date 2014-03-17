@@ -1,4 +1,5 @@
 \documentclass[10pt,a4paper,usenames,dvipnames]{article}
+\usepackage{amsmath}
 \author{ Jan Groothuijse }
 \title{ Proving an expression compiler correct }
 \begin{document}
@@ -8,57 +9,72 @@
 This document is the report accompanying a coq file in which a simple expression compiler is proven correct. 
 It shall discuss the challenges and solutions of the implementation, focussing on the process of creating it.
 For further (non process related) documentation please see the accompanying coq file. Since this subject was number
-3 on a list of possible subjects, and to ease 'searching' in the coq file, all assignments are prefixed by '3.'. 
+3 on a list of possible subjects, and to ease searching in the coq file, all assignments are prefixed by '3.'. 
 Those assignments also form the structure of this document.
 \end{abstract}
 
 \section*{3.1 Inductive definition of Exp}
-To keep the definitions small and aid the provability of the theorems, i decided to have a seperate BinOp definition, so that
-the actual Exp definition only needed 2 clauses. Since i have not tried it the other way, i do not know if this was the right
-decision. When proving the correctness of the compiler i did need to do induction on BinOp in order to keep the goals readable, and i did end up with what i think is not the shortest way to prove the theorem.
+To keep the definitions small and aid the provability of the theorems, I decided to have a seperate \emph{BinOp} definition, so that
+the actual \emph{Exp} definition only needed 2 clauses. Since I have not tried it the other way, I do not know if this was the right
+decision. When proving the correctness of the compiler I did need to do induction on \emph{BinOp} in order to keep the goals readable and I did end up with what I think is not the shortest way to prove the theorem.
 
 For the definition of the following functions, these 'small' datatypes did work well.
 
 \section*{3.2 Eval }
-Defining eval based on the previously declared datatypes was pretty straightforward.
+Defining \emph{eval} based on the previously declared datatypes was pretty straightforward.
 
 \section*{ Front-end }
 I decided for testing purposes and for dusting off my ocalm/coq 'experience' to implement a front-end for this compiler.
-Since i already build a compiler once using a functional language, the design was mostly in my head already.
+Since I already build a compiler once using a functional language, the design was mostly in my head already.
 
-I did at some point make a version that used mutual recursion, but in order to show coq that the arguments where indeed descreasing i had to duplicate some logic in all of the functions. So it turned out to be really big and i decided to use
+I did at some point make a version that used mutual recursion, but in order to show coq that the arguments where indeed descreasing I had to duplicate some logic in all of the functions. So it turned out to be really big and I decided to use
 this approach instead. This version however does not respect operator precedence.
 
-Its a simple lexer-parser design, with the note that the lexer's result is reversed, a parser could be designed to handle this, but in this case it makes no dirrence.
+Its a simple lexer-parser design, with the note that the lexer's result is reversed, a parser could be designed to handle this, but in this case it makes no difference.
 
-Along the way i also created a option\_flatten, which turns an option (option a) into option a; i did find a option\_map, but i could not find a function that does this, so i created it.
+Along the way I also created a \emph{option\_flatten}, which turns an \emph{option (option a)} into \emph{option a}; I did find a \emph{option\_map}, but I could not find a function that does this, so I created it.
 
 \section*{3.3 Inductive definition of RPN }
 
-In the reverse polish notation, because there are no parentheses, there are only numbers and operators. While this could be defined using a list (either nat Binop), i decided to play it safe and define a RPNSymbol to be either a literal (number) or an operator (BinOp). I did however use lists, RPN is defined as list RPNSymbol.
+In the reverse polish notation, because there are no parentheses, there are only numbers and operators. While this could be defined using a \emph{list (either nat Binop)}, i decided to play it safe and define a \emph{RPNSymbol} to be either a literal (number) or an operator (\emph{BinOp}). I did however use lists, \emph{RPN} is defined as \emph{list RPNSymbol}.
 
-The reasen for not using Either is readability of the proof, i was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
+The reasen for not using \emph{Either} is readability of the proof, I was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
 
 \section*{3.4 Compiler }
 The compiler is pretty straightforward, using lists as output did help here. Its the shape of the recursion that does the transformation.
 
 \section*{3.5 Evaluator for RPN}
-When evaluating rpn, one needs a 'stack' like datastructure. Fortunaly for us, the list is such a datastructure, so our stacks of numbers is a list nat. The rpn_eval_ function consumes code, uses an accumulater as stack. In order to create a nicer interface, i also created rpn_eval which only takes RPN as argument and then call rpn_eval_ with an empty stack. This should be the function that is 'exported'.
+When evaluating rpn, one needs a 'stack' like datastructure. Fortunaly for us the list is such a datastructure, so our stack of numbers is a list nat. The \emph{rpn\_eval\_} function consumes code and uses the stack parameter as accumulator. In order to create a nicer interface I also created \emph{rpn\_eval} which only takes RPN as argument and then call \emph{rpn\_eval\_} with an empty stack. This should be the function that is 'exported'.
 
 This wrapper function poses no real challanges for proving, but it should be unfolded before doing induction so that the induction hyptothesis is somewhat more usefull.
 
-rpn_eval_ looks slightly clumbsy, because in case of rpnop we need to pop 2 values from the stack. The order of n1 and n2 is reversed to operate more like the semantisch defining eval function.
+The definition of \emph{rpn\_eval\_} looks slightly clumbsy because in case of \emph{rpnop} we need to pop 2 values from the stack. The order of \emph{n1} and \emph{n2} is reversed to operate more like the semantics defining \emph{eval} function.
+
+\section*{ Append properties }
+
+For reasons unknown to me, \emph{app\_nil} and \emph{app\_assoc} where not defined on my system even after \emph{Require Import List}. I used version 8.2pl2 (September 2010) of CoqIde. Because my definitions make use of appends i defined and proved my own \emph{app\_nil} and \emph{app\_assoc}.
+
+\section*{ 3.6 Prove that $\forall$ e $\in$ Exp, Some (eval e) = rpn\_eval (rpn e) }
+
+At some point when I was trying to prove the above statement directly it occured to me that I needed to use the intermediate steps produced by running \emph{rpn\_eval\_}. When doing induction on the structure of \emph{Exp}, it does not help to know that smaller expressions also return a result if we cannot use that result. In the intermediate step it would be easier to show what happens on the stack.
+
+So I first proved a different theorem concentrating mostly on the inner workings of the \emph{rpn\_eval\_} function: Theorem step:
+\begin{multline*}
+	\forall e \in Exp, \forall s \in $\emph{list nat}$, \forall t \in RPN, \\
+	rpn\_eval\_ s (app (rpn e) t) = rpn\_eval\_ (eval e :: s) t
+\end{multline*}
+
+Because this theorem does incorporate a stack and does not concern itself with returning the actual result, the induction hypothesis is more helpful and the theorem becomes easier to prove.
+
+After proving the \emph{step} theorem the original theorem becomes a corollary.
+
+\subsection*{ Proof normalization (or lack thereof) }
+Parts of the proof of the \emph{step} theorem are highly repetetive, those parts also happen to be rather lenghty and as a result the entire proof is very long. At some point I use induction on the binary operators, if I could postpone doing so the proof could be much shorter. This way however the proof-goals stay very readable and understandable, which made my life slightly easier.
+
+\section*{ 3.7 Variables }
+To allow for variables in an environment, I chose refer to those variables by numbers and use a list to actually store their values. This meant that the expressions now have 2 additional constructors, one to get a value from memory and one to update a a value in memory.
 
 
-\begin{thebibliography}{9}
-
-\bibitem{CH2Ointro}
-	Freek Wiedijk, 
-	\emph{Formalizing the C99 standard in HOL, Isabelle and Coq}, 
-	Institute for Computing and Information Sciences, Radboud University Nijmegen, 
-	date.
-
-\end{thebibliography}
 
 
 \end{document}
