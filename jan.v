@@ -331,48 +331,38 @@ Inductive Exp2 :=
 | letvar : nat -> Exp2 -> Exp2 -> Exp2
 | exp2 : BinOp -> Exp2 -> Exp2 -> Exp2 .
 
-Fixpoint lookup (n: nat) (l: list nat) : option nat :=
+Fixpoint lookup (n: nat) (l: list nat) : nat :=
 match l with
-| nil => None
+| nil => 0
 | h :: tl => match n with
-  | 0 => Some h
+  | 0 => h
   | S n0 => lookup n0 tl
   end
 end.
 
-Fixpoint setvar (n m: nat) (l: list nat) : option (list nat) := 
+Fixpoint setvar (n m: nat) (l: list nat) : (list nat) := 
 match l with
-| nil => match n with | 0 => Some (m :: nil) | _ => None end
+| nil => 
+  match n with 
+  | 0 => m :: nil
+  | S n0 => 0 :: setvar n0 m nil
+  end
 | h :: tl => match n with
-  | 0 => Some (m :: tl)
-  | S n0 => match setvar n0 m l with 
-    | None => None
-    | Some tl0 => Some (h :: tl0)
-    end
+  | 0 => m :: tl
+  | S n0 => h :: setvar n0 m tl
   end
 end.
 
-Fixpoint eval2 (e: Exp2) (env: list nat) : option nat := match e with
-| lit2 n => Some n
+Fixpoint eval2 (e: Exp2) (env: list nat) : nat := match e with
+| lit2 n => n
 | var n => lookup n env
-| letvar n e1 e2 => match eval2 e1 env with
-  | None => None
-  | Some v => match (setvar n v env) with
-    | None => None
-    | Some env2 => eval2 e2 env2
-    end
-  end
-| exp2 op e1 e2 => match eval2 e1 env with
-  | None => None
-  | Some v1 => match eval2 e2 env with
-    | None => None
-    | Some v2 => match op with
-      | add => Some (v1 + v2)
-      | sub => Some (v1 - v2)
-      | mul => Some (v1 * v2)
-      end
-    end
-  end
+| letvar n e1 e2 => eval2 e2 (setvar n (eval2 e1 env) env)
+| exp2 op e1 e2 => 
+  match op with
+  | add => (eval2 e2 env) + (eval2 e1 env)
+  | sub => (eval2 e2 env) - (eval2 e1 env)
+  | mul => (eval2 e2 env) * (eval2 e1 env)
+  end  
 end.
 
 Inductive RPNSymbol2 := 
@@ -394,39 +384,46 @@ end.
 
 (* Adds to rpn_eval_ the concept of stackframes for the environment *)
 Fixpoint rpn2_eval_ (s : list nat) (f : list (list nat)) (code: RPN2) : option nat := 
-match f with | nil => None | f1 :: fx =>
-match code with
-| nil => match s with | nil => None | r :: _ => Some r end
-| h :: tl => match h with
-  | rpnlit2 n => rpn2_eval_ (n :: s) f tl
-  | rpnvar n => match lookup n f1 with
-    | None => None
-    | Some v => rpn2_eval_ (v :: s) f tl
-    end
-  | popframe => rpn2_eval_ s fx tl
-  | pushframe => match s with
-    | nil => None
-    | n1 :: s1 => match s1 with 
-      | nil => None
-      | n2 :: s2 => match (setvar n1 n2 f1) with
-        | None => None
-        | Some f0 => rpn2_eval_ s2 (f0 :: f) tl
-        end
-      end
-    end
-  | rpnop2 op => match s with
+match f with 
+| nil => None 
+| f1 :: fx =>
+  match code with
+  | nil => 
+    match s with 
     | nil => None 
-    | n1 :: s1 => match s1 with
+    | r :: _ => Some r 
+    end
+  | h :: tl => 
+    match h with
+    | rpnlit2 n => rpn2_eval_ (n :: s) f tl
+    | rpnvar n => rpn2_eval_ (lookup n f1 :: s) f tl
+    | popframe => rpn2_eval_ s fx tl
+    | pushframe => 
+      match s with
       | nil => None
-      | n2 :: s2 => match op with
-        | add => rpn2_eval_ (n2 + n1 :: s2) f tl
-        | sub => rpn2_eval_ (n2 - n1 :: s2) f tl
-        | mul => rpn2_eval_ (n2 * n1 :: s2) f tl
+      | n1 :: s1 => 
+        match s1 with 
+        | nil => None
+        | n2 :: s2 => rpn2_eval_ s2 ((setvar n1 n2 f1) :: f) tl
+        end
+      end
+    | rpnop2 op => 
+      match s with
+      | nil => None 
+      | n1 :: s1 => 
+        match s1 with
+        | nil => None
+        | n2 :: s2 => 
+          match op with
+          | add => rpn2_eval_ (n2 + n1 :: s2) f tl
+          | sub => rpn2_eval_ (n2 - n1 :: s2) f tl
+          | mul => rpn2_eval_ (n2 * n1 :: s2) f tl
+          end
         end
       end
     end
-  end
-end end.
+  end 
+end.
 
 Definition rpn2_eval (code : RPN2) (env : list nat) : option nat :=
 rpn2_eval_ nil (env :: nil) code.
@@ -545,14 +542,19 @@ reflexivity.
 Qed.
 
 Theorem step2 : 
-  forall e : Exp2, forall m : list nat, forall v : nat,
-  from_option_nat (eval2 e m) = v ->
+  forall e : Exp2, forall m : list nat,
     forall s: list nat, forall t : RPN2, forall fx : list (list nat),
-      rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ (v :: s) (m :: fx) t.
-intros e m v.
+      rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ ((eval2 e m) :: s) (m :: fx) t.
+intros e m.
 intro x.
 induction e.
 simpl.
+reflexivity.
+simpl.
+reflexivity.
+simpl.
+
+
 unfold eval2 in x.
 assert (x0 : n = from_option_nat (Some n)).
 apply some_id_nat.
