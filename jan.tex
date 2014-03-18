@@ -1,5 +1,5 @@
 \documentclass[10pt,a4paper,usenames,dvipnames]{article}
-\usepackage{amsmath}
+\usepackage{amssymb,amsmath}
 \author{ Jan Groothuijse }
 \title{ Proving an expression compiler correct }
 \begin{document}
@@ -7,38 +7,55 @@
 \maketitle
 \begin{abstract}
 This document is the report accompanying a coq file in which a simple expression compiler is proven correct. 
-It shall discuss the challenges and solutions of the implementation, focussing on the process of creating it.
-For further (non process related) documentation please see the accompanying coq file. Since this subject was number
-3 on a list of possible subjects, and to ease searching in the coq file, all assignments are prefixed by '3.'. 
+It shall discuss the challenges and solutions of the implementation, focussing on the process of creating it and design decisions.
+For further (non process or design related) documentation please see the accompanying coq file. Since this subject was number
+3 on a list of possible subjects and to ease searching in the coq file, all assignments are prefixed by '3.'. 
 Those assignments also form the structure of this document.
 \end{abstract}
 
-\section*{3.1 Inductive definition of Exp}
-To keep the definitions small and aid the provability of the theorems, I decided to have a seperate \emph{BinOp} definition, so that
-the actual \emph{Exp} definition only needed 2 clauses. Since I have not tried it the other way, I do not know if this was the right
-decision. When proving the correctness of the compiler I did need to do induction on \emph{BinOp} in order to keep the goals readable and I did end up with what I think is not the shortest way to prove the theorem.
+\section*{3.1 Inductive definition of \emph{Exp}}
+To keep the definitions small and aid the provability of the theorems, I decided to have a seperate \emph{BinOp} definition, so that the actual \emph{Exp} definition only needed 2 clauses. Since I have not tried it the other way, I do not know if this was the right decision. When proving the correctness of the compiler I did need to do induction on \emph{BinOp} in order to keep the goals readable and I did end up with what I think is not the shortest way to prove the theorem.
 
 For the definition of the following functions, these 'small' datatypes did work well.
+
+\begin{align*}
+& \text{Inductive} \: BinOp := \\
+& \vert \: add : BinOp \\
+& \vert \: sub : BinOp \\
+& \vert \: mul : BinOp \\
+\\
+& \text{Inductive} \: Exp :=  \\
+& | \: lit : nat \rightarrow Exp \\
+& | \: exp : BinOp \rightarrow Exp \rightarrow Exp \rightarrow Exp. \\
+\end{align*}
 
 \section*{3.2 Eval }
 Defining \emph{eval} based on the previously declared datatypes was pretty straightforward.
 
 \section*{ Front-end }
 I decided for testing purposes and for dusting off my ocalm/coq 'experience' to implement a front-end for this compiler.
-Since I already build a compiler once using a functional language, the design was mostly in my head already.
+Since I already build a simple toy compiler once using a functional language, the design was mostly in my head already.
 
 I did at some point make a version that used mutual recursion, but in order to show coq that the arguments where indeed descreasing I had to duplicate some logic in all of the functions. So it turned out to be really big and I decided to use
 this approach instead. This version however does not respect operator precedence.
 
 Its a simple lexer-parser design, with the note that the lexer's result is reversed, a parser could be designed to handle this, but in this case it makes no difference.
 
-Along the way I also created a \emph{option\_flatten}, which turns an \emph{option (option a)} into \emph{option a}; I did find a \emph{option\_map}, but I could not find a function that does this, so I created it.
+Along the way I also created a \emph{option\_flatten}, which turns an \emph{option (option a)} into \emph{option a}. I did find a \emph{option\_map}, but I could not find a function that does what my option\_flatten does so I created it.
 
 \section*{3.3 Inductive definition of RPN }
 
 In the reverse polish notation, because there are no parentheses, there are only numbers and operators. While this could be defined using a \emph{list (either nat Binop)}, i decided to play it safe and define a \emph{RPNSymbol} to be either a literal (number) or an operator (\emph{BinOp}). I did however use lists, \emph{RPN} is defined as \emph{list RPNSymbol}.
 
-The reasen for not using \emph{Either} is readability of the proof, I was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
+\begin{align*}
+& \text{Inductive} \: RPNSymbol := \\
+& | \: rpnlit : nat \rightarrow RPNSymbol \\
+& | \: rpnop : BinOp \rightarrow RPNSymbol. \\
+\\
+& \text{Definition} \: RPN := list \: RPNSymbol.
+\end{align*}
+
+The reason for not using \emph{Either} is readability of the proof, I was afraid to get lost by some many lefts and rights. The reason to use lists is because it has all sorts of functions, lemma's and theorems already defined for it.
 
 \section*{3.4 Compiler }
 The compiler is pretty straightforward, using lists as output did help here. Its the shape of the recursion that does the transformation.
@@ -74,6 +91,36 @@ Parts of the proof of the \emph{step} theorem are highly repetetive, those parts
 \section*{ 3.7 Variables }
 To allow for variables in an environment, I chose refer to those variables by numbers and use a list to actually store their values. This meant that the expressions now have 2 additional constructors, one to get a value from memory and one to update a a value in memory.
 
+\begin{align*}
+& \text{Inductive} \: Exp2 := \\
+& | \: lit2 : nat \rightarrow Exp2 \\ 
+& | \: var : nat \rightarrow Exp2 \\
+& | \: letvar : nat \rightarrow Exp2 \rightarrow Exp2 \rightarrow Exp2 \\
+& | \: exp2 : BinOp \rightarrow Exp2 \rightarrow Exp2 \rightarrow Exp2 \\
+\end{align*}
+
+Now in the \emph{eval2} function we have the environment as extra argument and 2 additional cases. To implement scoping rules
+in this function we use ordinary backtracking.
+
+For the \emph{RPN} version I needed to define more symbols, one to get a value from memory and one to set a value. Because we cannot use backtracking here to implement scoping rules I needed 2 additional symbols, one to store a specific value and one to rollback this store action. These addaptations makes the symbols look slightly more like bytecode.
+
+\begin{align*}
+& \text{Inductive} \: RPNSymbol2 := \\
+& | \: rpnlit2 : nat \rightarrow RPNSymbol2 \\
+& | \: rpnvar : nat \rightarrow RPNSymbol2 \\
+& | \: popframe : RPNSymbol2 \\
+& | \: pushframe : RPNSymbol2 \\
+& | \: rpnop2 : BinOp \rightarrow RPNSymbol2. \\
+\\
+& \text{Definition} \: RPN2 := list \: RPNSymbol2. 
+\end{align*}
+
+In the \emph{rpn2} function whenever a letvar is compiled, we first execute the computation of the value to be stored, then
+put the variable number on the stack and then do a pushframe, this will case a new memory frame to be made with as value for the variable number the computation we have done earlier. With this frame pushed on top of the existing frames we execute the 'in' expression and after that expression we pop the frame before continuing, so that the memory operation has been undone.
+
+The \emph{rpn2\_eval\_} function like the \emph{eval2} function takes an additional argument. But instead of one \emph{list} to represent memory, \emph{rpn2\_eval\_} uses a list of lists of nat to represent a stack of memory frames.
+
+\section*{3.8 Avoiding None }
 
 
 

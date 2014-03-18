@@ -484,3 +484,138 @@ Eval compute in compile_and_run "4 + 5".
 Definition interpret (s: string) : option nat := option_map (eval) (lex_and_parse s).
 Eval compute in interpret "4 + 5".
 
+
+Print eq.
+
+Print option.
+
+Search option.
+(*
+Lemma option_eq_nat : forall (x y : nat), (Some x = Some y) -> (x = y).
+intros.
+compare (x) (y).
+intro x0.
+exact x0.
+intro x0.
+elimtype False.
+
+decide equality.
+reflexivity.
+
+
+
+Definition eq_option_nat (x y : option nat) : Prop :=
+  match x with
+  | Some x0 =>
+    match y with
+    | Some y0 => x0 = y0
+    | None => False
+    end
+  | None =>
+    match y with
+    | Some _ => False
+    | None => True
+    end
+  end.
+
+
+
+Lemma option_eq_nat : forall (x y : nat), (eq_option_nat (Some x) (Some y)) -> (x = y).
+intros x y H.
+induction x.
+induction y.
+reflexivity.
+elimtype False.
+contradict H.
+*)
+
+(** Adaptation of from_option from http://robbertkrebbers.nl/research/ch2o/option.html *)
+Definition from_option_nat (x : option nat) : nat :=
+  match x with
+  | None => 0
+  | Some b => b
+  end.
+
+Lemma some_id_nat : forall n : nat, n = from_option_nat (Some n).
+induction n.
+unfold from_option_nat.
+reflexivity.
+unfold from_option_nat.
+reflexivity.
+Qed.
+
+Theorem step2 : 
+  forall e : Exp2, forall m : list nat, forall v : nat,
+  from_option_nat (eval2 e m) = v ->
+    forall s: list nat, forall t : RPN2, forall fx : list (list nat),
+      rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ (v :: s) (m :: fx) t.
+intros e m v.
+intro x.
+induction e.
+simpl.
+unfold eval2 in x.
+assert (x0 : n = from_option_nat (Some n)).
+apply some_id_nat.
+rewrite x0.
+rewrite x.
+reflexivity.
+unfold eval2 in x.
+unfold rpn2.
+simpl.
+unfold lookup in x.
+unfold lookup.
+
+unfold Some in x.
+
+
+
+
+
+
+
+
+Theorem step2 : 
+  forall e : Exp2, forall m : list nat, forall v : nat,
+  eval2 e m = Some v ->
+    forall s: list nat, forall t : RPN2, forall fx : list (list nat),
+      rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ (v :: s) (m :: fx) t.
+intros e m v.
+intro x.
+induction e.
+simpl.
+unfold eval2 in x.
+assert (x0 : n = from_option_nat (Some n)).
+apply some_id_nat.
+assert (x1 : v = from_option_nat (Some v)).
+apply some_id_nat.
+rewrite x0.
+rewrite x1.
+rewrite x.
+reflexivity.
+unfold eval2 in x.
+unfold rpn2.
+simpl.
+unfold lookup in x.
+unfold lookup.
+
+unfold Some in x.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
