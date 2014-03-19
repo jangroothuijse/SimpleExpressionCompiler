@@ -555,11 +555,23 @@ reflexivity.
 simpl.
 (* spoonfeed steps concerning frame-push-pop *)
 intros t fx.
+assert (s1 : 
+  (rpn2 e1 ++ rpnlit2 n :: (pushframe :: (rpn2 e2 ++ (popframe :: nil)))) ++ t 
+  =
+  rpn2 e1 ++ ((rpnlit2 n :: (pushframe :: (rpn2 e2 ++ (popframe :: nil)))) ++ t)    
+  ).
+rewrite app_assoc.
+reflexivity.
+rewrite s1.
 rewrite IHe1 with (t := (rpnlit2 n :: pushframe :: rpn2 e2 ++ popframe :: nil) ++ t) (fx := fx).
-
-
-
-
+simpl.
+(* assert (s2 : *)
+assert (s2 : (rpn2 e2 ++ popframe :: nil) ++ t = 
+              rpn2 e2 ++ ((popframe :: nil) ++ t)).
+rewrite app_assoc.
+reflexivity.
+rewrite s2.
+apply IHe2 with (t := (popframe :: nil) ++ t).
 
 
 
