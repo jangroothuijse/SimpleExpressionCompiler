@@ -35,6 +35,7 @@ end.
 Eval compute in eval (lit 3).
 Eval compute in eval (exp mul (lit 2) (lit 3)).
 
+(* Not relevant for the proof *)
 Inductive Tok := | num : nat -> Tok
 | binop : BinOp -> Tok | popen : Tok | pclose : Tok.
 
@@ -120,7 +121,7 @@ Eval compute in lex_and_parse "13 + (14 + 5)".
 Eval compute in lex_and_parse "(((13)) + (14 + 5) * (15 + 6))".
 Eval compute in lex_and_parse "(((13)) + (14 + 5) * (15 + 6)))".
 Eval compute in lex_and_parse "((((13)) + (14 + 5) * (15 + 6))".
-
+(* / Not relevant for the proof *)
 
 (* 3.3 
  * Give an Inductive definition of a datatype RPN of Reverse Polish Notation
@@ -172,7 +173,7 @@ Definition rpn_eval (code: RPN) := rpn_eval_ nil code.
 Eval compute in option_map (rpn_eval) (option_map (rpn) (lex_and_parse "1+5*6")).
 Eval compute in option_map (rpn_eval) (option_map (rpn) (lex_and_parse "15*5+5")).
 
-(* I doont know why i did not have these, please comment them out if you have them *)
+(* I don't know why I did not have these, please comment them out if you have them *)
 
 Lemma app_nil: forall (a:Type) (x : list a), x ++ nil = x.
 induction x.
@@ -205,20 +206,20 @@ simpl.
 induction b.
 intros s t.
 assert (s1 := (rpn e1 ++ rpn e2 ++ rpnop add :: nil) ++ t 
-       = rpn e1 ++ (rpn e2 ++ ((rpnop add :: nil) ++ t))).
+             = rpn e1 ++ (rpn e2 ++ ((rpnop add :: nil) ++ t))).
 replace ((rpn e1 ++ rpn e2 ++ rpnop add :: nil) ++ t) 
    with (rpn e1 ++ (rpn e2 ++ ((rpnop add :: nil) ++ t))).
 
-assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop add :: nil) ++ t) = 
-   rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop add :: nil) ++ t)).
+assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop add :: nil) ++ t) 
+             = rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop add :: nil) ++ t)).
 apply IHe1 with (t := rpn e2 ++ (rpnop add :: nil) ++ t).
 
 assert (step2: rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop add :: nil) ++ t)
-= rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop add :: nil) ++ t)).
+             = rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop add :: nil) ++ t)).
 apply IHe2 with (t := (rpnop add :: nil) ++ t).
 
 assert (step3: 
-    rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop add :: nil) ++ t)
+      rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop add :: nil) ++ t)
     = rpn_eval_ (eval e1 + eval e2 :: s) t).
 simpl.
 reflexivity.
@@ -234,20 +235,20 @@ reflexivity.
 (* Same for - *)
 intros s t.
 assert (s1 := (rpn e1 ++ rpn e2 ++ rpnop sub :: nil) ++ t 
-       = rpn e1 ++ (rpn e2 ++ ((rpnop sub :: nil) ++ t))).
+             = rpn e1 ++ (rpn e2 ++ ((rpnop sub :: nil) ++ t))).
 replace ((rpn e1 ++ rpn e2 ++ rpnop sub :: nil) ++ t) 
    with (rpn e1 ++ (rpn e2 ++ ((rpnop sub :: nil) ++ t))).
 
-assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop sub :: nil) ++ t) = 
-   rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop sub :: nil) ++ t)).
+assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop sub :: nil) ++ t) 
+             = rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop sub :: nil) ++ t)).
 apply IHe1 with (t := rpn e2 ++ (rpnop sub :: nil) ++ t).
 
 assert (step2: rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop sub :: nil) ++ t)
-= rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)).
+             = rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)).
 apply IHe2 with (t := (rpnop sub :: nil) ++ t).
 
 assert (step3: 
-    rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)
+      rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop sub :: nil) ++ t)
     = rpn_eval_ (eval e1 - eval e2 :: s) t).
 simpl.
 reflexivity.
@@ -263,20 +264,20 @@ reflexivity.
 (* and again for multiplication *)
 intros s t.
 assert (s1 := (rpn e1 ++ rpn e2 ++ rpnop mul :: nil) ++ t 
-       = rpn e1 ++ (rpn e2 ++ ((rpnop mul :: nil) ++ t))).
+             = rpn e1 ++ (rpn e2 ++ ((rpnop mul :: nil) ++ t))).
 replace ((rpn e1 ++ rpn e2 ++ rpnop mul :: nil) ++ t) 
    with (rpn e1 ++ (rpn e2 ++ ((rpnop mul :: nil) ++ t))).
 
-assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop mul :: nil) ++ t) = 
-   rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop mul :: nil) ++ t)).
+assert (step1: rpn_eval_ s (rpn e1 ++ rpn e2 ++ (rpnop mul :: nil) ++ t)
+             = rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop mul :: nil) ++ t)).
 apply IHe1 with (t := rpn e2 ++ (rpnop mul :: nil) ++ t).
 
 assert (step2: rpn_eval_ (eval e1 :: s) (rpn e2 ++ (rpnop mul :: nil) ++ t)
-= rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)).
+             = rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)).
 apply IHe2 with (t := (rpnop mul :: nil) ++ t).
 
 assert (step3: 
-    rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)
+      rpn_eval_ (eval e2 :: eval e1 :: s) ((rpnop mul :: nil) ++ t)
     = rpn_eval_ (eval e1 * eval e2 :: s) t).
 simpl.
 reflexivity.
@@ -448,99 +449,6 @@ Eval compute in eval2 testExp (0 :: nil).
 Eval compute in rpn2_eval_ nil ((0 :: nil) :: nil) (rpn2 testExp).
 Eval compute in rpn2_eval (rpn2 testExp) (0 :: nil).
 
-
-(* 3.8
- * Discuss how you might avoid explicit consideration of None terms in the
- * definition of rpn_eval, and explain how you need to modify your formal-
- * ization in Coq. 
- *)
-
-(* In order to avoid explicit None's everywhere, one would have to verify that al looked
- up variables actually exists; or default to 0 *)
-(* The formalization would have to be changed to include the 'var' case whenever we
- do induction on Exp (now Exp2). The workings of var would be almost identical to a 
- normal literal. The letvar however is more of a challenge*)
-
-
-
-(* Some usefull functions for the simple expression compiler *)
-
-Definition compile (s : string) : option RPN := option_map (rpn) (lex_and_parse s).
-
-Eval compute in compile "4 + 5".
-Eval compute in compile "7 + 8 + 6".
-Eval compute in compile "(5 + 7) + (6 * 3)".
-Eval compute in compile "(((1)) + (1 + 5) * (1 + 6))".
-
-
-Definition compile_and_run (s : string) : option nat := option_flatten (nat) 
-  (option_map (rpn_eval) (compile s)).
-
-Eval compute in compile_and_run "4 + 5".
-
-Definition interpret (s: string) : option nat := option_map (eval) (lex_and_parse s).
-Eval compute in interpret "4 + 5".
-
-
-Print eq.
-
-Print option.
-
-Search option.
-(*
-Lemma option_eq_nat : forall (x y : nat), (Some x = Some y) -> (x = y).
-intros.
-compare (x) (y).
-intro x0.
-exact x0.
-intro x0.
-elimtype False.
-
-decide equality.
-reflexivity.
-
-
-
-Definition eq_option_nat (x y : option nat) : Prop :=
-  match x with
-  | Some x0 =>
-    match y with
-    | Some y0 => x0 = y0
-    | None => False
-    end
-  | None =>
-    match y with
-    | Some _ => False
-    | None => True
-    end
-  end.
-
-
-
-Lemma option_eq_nat : forall (x y : nat), (eq_option_nat (Some x) (Some y)) -> (x = y).
-intros x y H.
-induction x.
-induction y.
-reflexivity.
-elimtype False.
-contradict H.
-*)
-
-(** Adaptation of from_option from http://robbertkrebbers.nl/research/ch2o/option.html *)
-Definition from_option_nat (x : option nat) : nat :=
-  match x with
-  | None => 0
-  | Some b => b
-  end.
-
-Lemma some_id_nat : forall n : nat, n = from_option_nat (Some n).
-induction n.
-unfold from_option_nat.
-reflexivity.
-unfold from_option_nat.
-reflexivity.
-Qed.
-
 Theorem step2 : 
   forall e : Exp2, forall s m : list nat,
     forall t : RPN2, forall fx : list (list nat),
@@ -552,7 +460,7 @@ reflexivity.
 simpl.
 reflexivity.
 simpl.
-(* spoonfeed steps concerning frame-push-pop *)
+(* Case letvar, so the push and pop steps *)
 intros s m t fx.
 assert (s1 : 
   (rpn2 e1 ++ rpnlit2 n :: (pushframe :: (rpn2 e2 ++ (popframe :: nil)))) ++ t 
@@ -578,19 +486,21 @@ induction b.
 intros s m t fx.
 replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 add :: nil) ++ t)
        with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 add :: nil) ++ t))).
-assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 add :: nil) ++ t) = 
-   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)).
+assert (step1: 
+    rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 add :: nil) ++ t) 
+  = rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)).
 apply IHe1 with (t := rpn2 e2 ++ (rpnop2 add :: nil) ++ t).
 rewrite step1.
 
-assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)
-= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 add :: nil) ++ t)).
+assert (step2: 
+    rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)
+  = rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 add :: nil) ++ t)).
 apply IHe2 with (t := (rpnop2 add :: nil) ++ t) (m := m) (fx := fx).
 rewrite step2.
 
 assert (step3: 
     rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 add :: nil) ++ t)
-    = rpn2_eval_ (eval2 e1 m + eval2 e2 m :: s) (m :: fx) t).
+  = rpn2_eval_ (eval2 e1 m + eval2 e2 m :: s) (m :: fx) t).
 simpl.
 reflexivity.
 rewrite step3.
@@ -604,19 +514,21 @@ reflexivity.
 intros s m t fx.
 replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 sub :: nil) ++ t)
        with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 sub :: nil) ++ t))).
-assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 sub :: nil) ++ t) = 
-   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)).
+assert (step1: 
+    rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 sub :: nil) ++ t) 
+  = rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)).
 apply IHe1 with (t := rpn2 e2 ++ (rpnop2 sub :: nil) ++ t).
 rewrite step1.
 
-assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)
-= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 sub :: nil) ++ t)).
+assert (step2: 
+    rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)
+  = rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 sub :: nil) ++ t)).
 apply IHe2 with (t := (rpnop2 sub :: nil) ++ t) (m := m) (fx := fx).
 rewrite step2.
 
 assert (step3: 
     rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 sub :: nil) ++ t)
-    = rpn2_eval_ (eval2 e1 m - eval2 e2 m :: s) (m :: fx) t).
+  = rpn2_eval_ (eval2 e1 m - eval2 e2 m :: s) (m :: fx) t).
 simpl.
 reflexivity.
 rewrite step3.
@@ -630,19 +542,21 @@ reflexivity.
 intros s m t fx.
 replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 mul :: nil) ++ t)
        with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 mul :: nil) ++ t))).
-assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 mul :: nil) ++ t) = 
-   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)).
+assert (step1: 
+    rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 mul :: nil) ++ t) 
+  = rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)).
 apply IHe1 with (t := rpn2 e2 ++ (rpnop2 mul :: nil) ++ t).
 rewrite step1.
 
-assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)
-= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 mul :: nil) ++ t)).
+assert (step2: 
+    rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)
+  = rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 mul :: nil) ++ t)).
 apply IHe2 with (t := (rpnop2 mul :: nil) ++ t) (m := m) (fx := fx).
 rewrite step2.
 
 assert (step3: 
     rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 mul :: nil) ++ t)
-    = rpn2_eval_ (eval2 e1 m * eval2 e2 m :: s) (m :: fx) t).
+  = rpn2_eval_ (eval2 e1 m * eval2 e2 m :: s) (m :: fx) t).
 simpl.
 reflexivity.
 rewrite step3.
@@ -651,27 +565,53 @@ rewrite app_assoc.
 rewrite app_assoc.
 rewrite app_assoc.
 reflexivity.
+Qed.
 
-
-Theorem interpret_equals_compile : forall e:Exp, Some (eval e) = rpn_eval (rpn e).
-unfold rpn_eval.
+Theorem interpret_equals_compile2 : forall e:Exp2, forall m: list nat, Some (eval2 e m) = rpn2_eval (rpn2 e) m.
+unfold rpn2_eval.
 induction e.
 simpl.
 reflexivity.
+simpl.
+reflexivity.
+intro m.
+replace (rpn2 (letvar n e1 e2)) with (rpn2 (letvar n e1 e2) ++ nil).
+rewrite step2 with (e := (letvar n e1 e2)) (m := m) (s := nil) (t := nil) (fx := nil).
+simpl.
+reflexivity.
+apply app_nil.
+intro m.
+replace (rpn2 (exp2 b e1 e2)) with (rpn2 (exp2 b e1 e2) ++ nil).
 induction b.
-simpl.
-rewrite step.
-rewrite step.
+rewrite step2 with (m := m) (s := nil) (t := nil) (fx := nil).
 simpl.
 reflexivity.
-simpl.
-rewrite step.
-rewrite step.
+rewrite step2 with (m := m) (s := nil) (t := nil) (fx := nil).
 simpl.
 reflexivity.
-simpl.
-rewrite step.
-rewrite step.
+rewrite step2 with (m := m) (s := nil) (t := nil) (fx := nil).
 simpl.
 reflexivity.
+apply app_nil.
 Qed.
+
+
+
+
+(* Some usefull functions for the simple expression compiler *)
+
+Definition compile (s : string) : option RPN := option_map (rpn) (lex_and_parse s).
+
+Eval compute in compile "4 + 5".
+Eval compute in compile "7 + 8 + 6".
+Eval compute in compile "(5 + 7) + (6 * 3)".
+Eval compute in compile "(((1)) + (1 + 5) * (1 + 6))".
+
+
+Definition compile_and_run (s : string) : option nat := option_flatten (nat) 
+  (option_map (rpn_eval) (compile s)).
+
+Eval compute in compile_and_run "4 + 5".
+
+Definition interpret (s: string) : option nat := option_map (eval) (lex_and_parse s).
+Eval compute in interpret "4 + 5".
