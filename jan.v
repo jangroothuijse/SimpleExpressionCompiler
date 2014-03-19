@@ -553,8 +553,18 @@ reflexivity.
 simpl.
 reflexivity.
 simpl.
+(* spoonfeed steps concerning frame-push-pop *)
+intros t fx.
+rewrite IHe1 with (t := (rpnlit2 n :: pushframe :: rpn2 e2 ++ popframe :: nil) ++ t) (fx := fx).
 
 
+
+
+
+
+
+
+Qed.
 unfold eval2 in x.
 assert (x0 : n = from_option_nat (Some n)).
 apply some_id_nat.
