@@ -359,9 +359,9 @@ Fixpoint eval2 (e: Exp2) (env: list nat) : nat := match e with
 | letvar n e1 e2 => eval2 e2 (setvar n (eval2 e1 env) env)
 | exp2 op e1 e2 => 
   match op with
-  | add => (eval2 e2 env) + (eval2 e1 env)
-  | sub => (eval2 e2 env) - (eval2 e1 env)
-  | mul => (eval2 e2 env) * (eval2 e1 env)
+  | add => (eval2 e1 env) + (eval2 e2 env)
+  | sub => (eval2 e1 env) - (eval2 e2 env)
+  | mul => (eval2 e1 env) * (eval2 e2 env)
   end  
 end.
 
@@ -542,11 +542,10 @@ reflexivity.
 Qed.
 
 Theorem step2 : 
-  forall e : Exp2, forall m : list nat,
-    forall s: list nat, forall t : RPN2, forall fx : list (list nat),
+  forall e : Exp2, forall s m : list nat,
+    forall t : RPN2, forall fx : list (list nat),
       rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ ((eval2 e m) :: s) (m :: fx) t.
-intros e m.
-intro x.
+intros e.
 induction e.
 simpl.
 reflexivity.
@@ -554,7 +553,7 @@ simpl.
 reflexivity.
 simpl.
 (* spoonfeed steps concerning frame-push-pop *)
-intros t fx.
+intros s m t fx.
 assert (s1 : 
   (rpn2 e1 ++ rpnlit2 n :: (pushframe :: (rpn2 e2 ++ (popframe :: nil)))) ++ t 
   =
@@ -572,70 +571,33 @@ rewrite app_assoc.
 reflexivity.
 rewrite s2.
 apply IHe2 with (t := (popframe :: nil) ++ t).
+(* what happend? *)
+simpl.
+induction b.
+intros s m t fx.
+replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 add :: nil) ++ t)
+       with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 add :: nil) ++ t))).
+assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 add :: nil) ++ t) = 
+   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)).
+apply IHe1 with (t := rpn2 e2 ++ (rpnop2 add :: nil) ++ t).
+rewrite step1.
 
+assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 add :: nil) ++ t)
+= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 add :: nil) ++ t)).
+apply IHe2 with (t := (rpnop2 add :: nil) ++ t) (m := m) (fx := fx).
+rewrite step2.
 
-
-
-Qed.
-unfold eval2 in x.
-assert (x0 : n = from_option_nat (Some n)).
-apply some_id_nat.
-rewrite x0.
-rewrite x.
+assert (step3: 
+    rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 add :: nil) ++ t)
+    = rpn2_eval_ (eval2 e1 m + eval2 e2 m :: s) (m :: fx) t).
+simpl.
 reflexivity.
-unfold eval2 in x.
-unfold rpn2.
-simpl.
-unfold lookup in x.
-unfold lookup.
-
-unfold Some in x.
-
-
-
-
-
-
-
-
-Theorem step2 : 
-  forall e : Exp2, forall m : list nat, forall v : nat,
-  eval2 e m = Some v ->
-    forall s: list nat, forall t : RPN2, forall fx : list (list nat),
-      rpn2_eval_ s (m :: fx) (app (rpn2 e) t) = rpn2_eval_ (v :: s) (m :: fx) t.
-intros e m v.
-intro x.
-induction e.
-simpl.
-unfold eval2 in x.
-assert (x0 : n = from_option_nat (Some n)).
-apply some_id_nat.
-assert (x1 : v = from_option_nat (Some v)).
-apply some_id_nat.
-rewrite x0.
-rewrite x1.
-rewrite x.
+rewrite step3.
 reflexivity.
-unfold eval2 in x.
-unfold rpn2.
-simpl.
-unfold lookup in x.
-unfold lookup.
-
-unfold Some in x.
-
-
-
-
-
-
-
-
-
-
-
-
-
+rewrite app_assoc.
+rewrite app_assoc.
+rewrite app_assoc.
+reflexivity.
 
 
 
