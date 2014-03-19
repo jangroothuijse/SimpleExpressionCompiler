@@ -564,16 +564,17 @@ reflexivity.
 rewrite s1.
 rewrite IHe1 with (t := (rpnlit2 n :: pushframe :: rpn2 e2 ++ popframe :: nil) ++ t) (fx := fx).
 simpl.
-(* assert (s2 : *)
 assert (s2 : (rpn2 e2 ++ popframe :: nil) ++ t = 
               rpn2 e2 ++ ((popframe :: nil) ++ t)).
 rewrite app_assoc.
 reflexivity.
 rewrite s2.
 apply IHe2 with (t := (popframe :: nil) ++ t).
-(* what happend? *)
+(* Case exp2 *)
 simpl.
 induction b.
+
+(* addition *)
 intros s m t fx.
 replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 add :: nil) ++ t)
        with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 add :: nil) ++ t))).
@@ -599,9 +600,78 @@ rewrite app_assoc.
 rewrite app_assoc.
 reflexivity.
 
+(* subtraction *)
+intros s m t fx.
+replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 sub :: nil) ++ t)
+       with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 sub :: nil) ++ t))).
+assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 sub :: nil) ++ t) = 
+   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)).
+apply IHe1 with (t := rpn2 e2 ++ (rpnop2 sub :: nil) ++ t).
+rewrite step1.
+
+assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 sub :: nil) ++ t)
+= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 sub :: nil) ++ t)).
+apply IHe2 with (t := (rpnop2 sub :: nil) ++ t) (m := m) (fx := fx).
+rewrite step2.
+
+assert (step3: 
+    rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 sub :: nil) ++ t)
+    = rpn2_eval_ (eval2 e1 m - eval2 e2 m :: s) (m :: fx) t).
+simpl.
+reflexivity.
+rewrite step3.
+reflexivity.
+rewrite app_assoc.
+rewrite app_assoc.
+rewrite app_assoc.
+reflexivity.
+
+(* multiplication *)
+intros s m t fx.
+replace ((rpn2 e1 ++ rpn2 e2 ++ rpnop2 mul :: nil) ++ t)
+       with (rpn2 e1 ++ (rpn2 e2 ++ ((rpnop2 mul :: nil) ++ t))).
+assert (step1: rpn2_eval_ s (m :: fx) (rpn2 e1 ++ rpn2 e2 ++ (rpnop2 mul :: nil) ++ t) = 
+   rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)).
+apply IHe1 with (t := rpn2 e2 ++ (rpnop2 mul :: nil) ++ t).
+rewrite step1.
+
+assert (step2: rpn2_eval_ (eval2 e1 m :: s) (m :: fx) (rpn2 e2 ++ (rpnop2 mul :: nil) ++ t)
+= rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 mul :: nil) ++ t)).
+apply IHe2 with (t := (rpnop2 mul :: nil) ++ t) (m := m) (fx := fx).
+rewrite step2.
+
+assert (step3: 
+    rpn2_eval_ (eval2 e2 m :: eval2 e1 m :: s) (m :: fx) ((rpnop2 mul :: nil) ++ t)
+    = rpn2_eval_ (eval2 e1 m * eval2 e2 m :: s) (m :: fx) t).
+simpl.
+reflexivity.
+rewrite step3.
+reflexivity.
+rewrite app_assoc.
+rewrite app_assoc.
+rewrite app_assoc.
+reflexivity.
 
 
-
-
-
-
+Theorem interpret_equals_compile : forall e:Exp, Some (eval e) = rpn_eval (rpn e).
+unfold rpn_eval.
+induction e.
+simpl.
+reflexivity.
+induction b.
+simpl.
+rewrite step.
+rewrite step.
+simpl.
+reflexivity.
+simpl.
+rewrite step.
+rewrite step.
+simpl.
+reflexivity.
+simpl.
+rewrite step.
+rewrite step.
+simpl.
+reflexivity.
+Qed.
